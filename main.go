@@ -13,6 +13,9 @@ import (
 //go:embed templates/main.template.go
 var mainTemplate string
 
+//go:embed templates/Makefile.template
+var makeTemplate string
+
 func main() {
 	app := &cli.App{
 		Name:        "beaver",
@@ -32,7 +35,7 @@ func main() {
 					&cli.StringFlag{
 						Name:     "name",
 						Aliases:  []string{"n"},
-						Usage:    "--name <project_name>",
+						Usage:    "--name project_name",
 						Required: true,
 					},
 				},
@@ -64,6 +67,12 @@ func newProject(c *cli.Context) error {
 	err = os.WriteFile(fmt.Sprintf("%s/main.go", projectName), []byte(mainTemplate), 0644)
 	if err != nil {
 		log.Printf("cannot create main file, err: %v", err)
+		return err
+	}
+
+	err = os.WriteFile(fmt.Sprintf("%s/Makefile", projectName), []byte(makeTemplate), 0644)
+	if err != nil {
+		log.Printf("cannot create Makefile, err: %v", err)
 		return err
 	}
 
