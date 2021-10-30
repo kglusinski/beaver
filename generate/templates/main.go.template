@@ -1,0 +1,24 @@
+package main
+
+import (
+	"context"
+	"fmt"
+	"os"
+	"os/signal"
+)
+
+func main() {
+	exit := make(chan os.Signal)
+	signal.Notify(exit, os.Interrupt)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	go runApp(ctx)
+
+	<-exit
+	cancel()
+}
+
+func runApp(ctx context.Context) {
+	fmt.Print("Hello world")
+	<-ctx.Done()
+}

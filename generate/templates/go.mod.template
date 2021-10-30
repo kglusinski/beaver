@@ -1,0 +1,7 @@
+module _PROJECT_NAME_
+
+go 1.17
+
+require (
+
+)
