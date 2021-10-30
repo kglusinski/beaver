@@ -35,6 +35,17 @@ func NewProject(c *cli.Context) error {
 		return err
 	}
 
+	configTemplate, err := templates.ReadFile("templates/config.go.template")
+	if err != nil {
+		log.Printf("cannot open config.go template, err: %v", err)
+		return err
+	}
+	err = os.WriteFile(fmt.Sprintf("%s/cmd/main/config.go", projectName), configTemplate, defaultFilePerm)
+	if err != nil {
+		log.Printf("cannot create config file, err: %v", err)
+		return err
+	}
+
 	makeTemplate, err := templates.ReadFile("templates/Makefile.template")
 	if err != nil {
 		log.Printf("cannot open Makefile template, err: %v", err)
