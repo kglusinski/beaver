@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"os/exec"
 )
 
 const defaultFilePerm = 0644
@@ -73,6 +74,14 @@ func NewProject(c *cli.Context) error {
 		log.Printf("cannot create go.mod, err: %v", err)
 		return err
 	}
+
+	cmd := exec.Command("go", "mod", "download")
+	err = cmd.Run()
+	if err != nil {
+		log.Printf("cannot download dependencies, err: %v", err)
+		return err
+	}
+
 
 	return nil
 }
