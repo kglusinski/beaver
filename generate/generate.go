@@ -1,137 +1,66 @@
 package generate
 
 import (
-	"bytes"
-	"embed"
+	"errors"
 	"fmt"
-	"github.com/urfave/cli/v2"
-	"io/ioutil"
 	"log"
-	"os"
 	"os/exec"
+
+	template2 "beaver/generate/template"
+	templateDir "beaver/templates"
+	"github.com/manifoldco/promptui"
+	"github.com/urfave/cli/v2"
 )
 
-const defaultFilePerm = 0644
+const (
+	FlagName      = "name"
+	FlagStructure = "structure"
+)
 
-//go:embed templates/*
-var templates embed.FS
+var templates = templateDir.Templates
 
 func NewProject(c *cli.Context) error {
-	projectName := c.String("name")
-
-	err := createDirTree(projectName)
-	if err != nil {
-		log.Printf("cannot create project tree, err: %v", err)
-		return err
+	validate := func(input string) error {
+		if len(input) <= 0 {
+			return errors.New("name cannot be empty")
+		}
+		return nil
 	}
 
-	mainTemplate, err := templates.ReadFile("templates/main.go.template")
-	if err != nil {
-		log.Printf("cannot open main.go template, err: %v", err)
-		return err
-	}
-	err = os.WriteFile(fmt.Sprintf("%s/cmd/main/main.go", projectName), mainTemplate, defaultFilePerm)
-	if err != nil {
-		log.Printf("cannot create main file, err: %v", err)
-		return err
+	promptName := promptui.Prompt{
+		Label:    "Project name",
+		Default:  "",
+		Validate: validate,
 	}
 
-	configTemplate, err := templates.ReadFile("templates/config.go.template")
+	projectName, err := promptName.Run()
 	if err != nil {
-		log.Printf("cannot open config.go template, err: %v", err)
-		return err
-	}
-	err = os.WriteFile(fmt.Sprintf("%s/cmd/main/config.go", projectName), configTemplate, defaultFilePerm)
-	if err != nil {
-		log.Printf("cannot create config file, err: %v", err)
-		return err
+		fmt.Printf("Prompt failed %v", err)
 	}
 
-	makeTemplate, err := templates.ReadFile("templates/Makefile.template")
-	if err != nil {
-		log.Printf("cannot open Makefile template, err: %v", err)
-		return err
-	}
-	err = os.WriteFile(fmt.Sprintf("%s/Makefile", projectName), makeTemplate, defaultFilePerm)
-	if err != nil {
-		log.Printf("cannot create Makefile, err: %v", err)
-		return err
+	promptType := promptui.Select{
+		Label: "Select project structure",
+		Items: []string{"standard", "hexagonal"},
 	}
 
-	gomodTemplate, err := templates.ReadFile("templates/go.mod.template")
+	_, projectStructure, err := promptType.Run()
 	if err != nil {
-		log.Printf("cannot open Makefile template, err: %v", err)
-		return err
-	}
-	err = os.WriteFile(fmt.Sprintf("%s/go.mod", projectName), gomodTemplate, defaultFilePerm)
-	if err != nil {
-		log.Printf("cannot create go.mod, err: %v", err)
-		return err
+		fmt.Printf("Prompt failed %v", err)
 	}
 
-	replacement := bytes.Replace(gomodTemplate, []byte("_PROJECT_NAME_"), []byte(projectName), -1)
-	if err = ioutil.WriteFile(fmt.Sprintf("%s/go.mod", projectName), replacement, defaultFilePerm); err != nil {
-		log.Printf("cannot create go.mod, err: %v", err)
-		return err
+	switch projectStructure {
+	case "standard":
+		template := template2.NewStandardTemplate(projectName, templates)
+		template.Generate()
+	case "hexagonal":
+		template := template2.NewHexagonalTemplate(projectName, templates)
+		template.Generate()
 	}
 
 	cmd := exec.Command("go", "mod", "download")
 	err = cmd.Run()
 	if err != nil {
 		log.Printf("cannot download dependencies, err: %v", err)
-		return err
-	}
-
-
-	return nil
-}
-
-func createDirTree(projectName string) error {
-	err := os.Mkdir(projectName, 0700)
-	if err != nil {
-		log.Printf("cannot create directory, err: %v", err)
-		return err
-	}
-
-	err = os.Mkdir(fmt.Sprintf("%s/cmd", projectName), 0700)
-	if err != nil {
-		log.Printf("cannot create directory, err: %v", err)
-		return err
-	}
-
-	err = os.Mkdir(fmt.Sprintf("%s/cmd/main", projectName), 0700)
-	if err != nil {
-		log.Printf("cannot create directory, err: %v", err)
-		return err
-	}
-
-	err = os.Mkdir(fmt.Sprintf("%s/internal", projectName), 0700)
-	if err != nil {
-		log.Printf("cannot create directory, err: %v", err)
-		return err
-	}
-
-	err = os.Mkdir(fmt.Sprintf("%s/pkg", projectName), 0700)
-	if err != nil {
-		log.Printf("cannot create directory, err: %v", err)
-		return err
-	}
-
-	err = os.Mkdir(fmt.Sprintf("%s/testdata", projectName), 0700)
-	if err != nil {
-		log.Printf("cannot create directory, err: %v", err)
-		return err
-	}
-
-	err = os.Mkdir(fmt.Sprintf("%s/tests", projectName), 0700)
-	if err != nil {
-		log.Printf("cannot create directory, err: %v", err)
-		return err
-	}
-
-	err = os.Mkdir(fmt.Sprintf("%s/docs", projectName), 0700)
-	if err != nil {
-		log.Printf("cannot create directory, err: %v", err)
 		return err
 	}
 

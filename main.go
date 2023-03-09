@@ -1,11 +1,12 @@
 package main
 
 import (
-	"beaver/generate"
 	_ "embed"
-	"github.com/urfave/cli/v2"
 	"log"
 	"os"
+
+	"beaver/generate"
+	"github.com/urfave/cli/v2"
 )
 
 const (
@@ -20,7 +21,7 @@ func main() {
 	app.Usage = ""
 	app.Authors = []*cli.Author{{
 		Name:  "Kamil Głusiński",
-		Email: "kontakt@zaprogramowani.dev",
+		Email: "kontakt@inzkawka.pl",
 	}}
 	app.Commands = []*cli.Command{
 		{
@@ -33,7 +34,7 @@ func main() {
 					Name:     "name",
 					Aliases:  []string{"n"},
 					Usage:    "--name project_name",
-					Required: true,
+					Required: false,
 				},
 			},
 		},
